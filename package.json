@@ -1,0 +1,15 @@
+{
+  "name": "workout-tracker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --bun vite",
+    "build": "bun --bun vite build"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "svelte": "^5.57.0",
+    "vite": "^8.3.0"
+  }
+}
