@@ -1,9 +1,17 @@
-<script>
+<script lang="ts">
   import { tick } from 'svelte';
-  import { displayName, nameColor } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names';
 
-  let { name, label, options, value = $bindable(''), onselect } = $props();
-  let input = $state();
+  import type { SearchOption } from '$lib/types';
+
+  let { name, label, options, value = $bindable(''), onselect }: {
+    name: string;
+    label: string;
+    options: SearchOption[];
+    value?: string;
+    onselect?: (name: string) => void;
+  } = $props();
+  let input = $state<HTMLInputElement>();
   let query = $state('');
   let expanded = $state(false);
   let active = $state(0);
@@ -14,8 +22,8 @@
   });
 
   export function focus() {
-    input.focus();
-    input.select();
+    input?.focus();
+    input?.select();
   }
 
   function show() {
@@ -23,14 +31,14 @@
     expanded = true;
   }
 
-  function choose(option) {
+  function choose(option: SearchOption) {
     value = option.name;
     query = '';
     expanded = false;
     onselect?.(option.name);
   }
 
-  async function keydown(event) {
+  async function keydown(event: KeyboardEvent) {
     if (event.isComposing) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();

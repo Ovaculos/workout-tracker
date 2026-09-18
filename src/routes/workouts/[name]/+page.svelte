@@ -1,9 +1,12 @@
-<script>
+<script lang="ts">
   import DeleteButton from '$lib/DeleteButton.svelte';
   import DeleteWorkout from '$lib/DeleteWorkout.svelte';
-  import { displayName, nameColor } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names';
 
-  let { data } = $props();
+  import type { PageProps } from './$types';
+  import type { PersonWorkout } from '$lib/types';
+
+  let { data }: PageProps = $props();
   let rows = $derived(Array.from({ length: Math.max(data.prs.length, data.recent.length, 1) }));
 </script>
 
@@ -11,7 +14,7 @@
   <title>{displayName(data.workout.name)} — Workout tracker</title>
 </svelte:head>
 
-{#snippet entry(result)}
+{#snippet entry(result: PersonWorkout)}
   <a href={`/people/${encodeURIComponent(result.person)}`} title={result.person}>
     {#if result.pictureVersion !== null}
       <img

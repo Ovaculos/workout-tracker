@@ -1,11 +1,14 @@
-<script>
+<script lang="ts">
   import { getContext } from 'svelte';
   import { goto } from '$app/navigation';
   import SearchSelect from '$lib/SearchSelect.svelte';
-  import { displayName, nameColor } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names';
 
-  let { data } = $props();
-  const actions = getContext('workout-actions');
+  import type { PageProps } from './$types';
+  import type { WorkoutActions } from '$lib/types';
+
+  let { data }: PageProps = $props();
+  const actions = getContext<WorkoutActions>('workout-actions');
   let peopleOptions = $derived(data.people.map((name) => ({
     name,
     picture: data.pictureVersions[name] === null ? null : `/people/${encodeURIComponent(name)}/picture?v=${data.pictureVersions[name]}`
@@ -16,7 +19,7 @@
   <title>Workout tracker</title>
 </svelte:head>
 
-{#snippet personLink(name)}
+{#snippet personLink(name: string)}
   <a class="person-link" href={`/people/${encodeURIComponent(name)}`} title={name}>
     {#if data.pictureVersions[name] !== null}
       <img

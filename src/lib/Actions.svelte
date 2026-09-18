@@ -1,18 +1,26 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   import { tick } from 'svelte';
   import SearchSelect from '$lib/SearchSelect.svelte';
 
-  let { data, dashboard = false, person = '', workout = '' } = $props();
-  let form = $state(null);
-  let dialog = $state();
+  import type { SubmitFunction } from '@sveltejs/kit';
+  import type { ActionMode, FormResult, WorkoutOptions } from '$lib/types';
+
+  let { data, dashboard = false, person = '', workout = '' }: {
+    data: WorkoutOptions;
+    dashboard?: boolean;
+    person?: string;
+    workout?: string;
+  } = $props();
+  let form = $state<FormResult | null>(null);
+  let dialog = $state<HTMLDialogElement>();
   let dialogVersion = $state(0);
-  let mode = $state('');
+  let mode = $state<ActionMode | ''>('');
   let fieldType = $state('number');
   let workoutName = $state('');
   let personName = $state('');
-  let workoutSearch = $state();
-  let valueInput = $state();
+  let workoutSearch = $state<{ focus: () => void }>();
+  let valueInput = $state<HTMLInputElement>();
   let submitting = $state(false);
   let rememberedWorkout = '';
   let selectedWorkout = $derived(data.workoutTypes.find((workout) => workout.name === workoutName));
@@ -21,7 +29,7 @@
     picture: data.pictureVersions[name] === null ? null : `/people/${encodeURIComponent(name)}/picture?v=${data.pictureVersions[name]}`
   })));
 
-  export async function open(nextMode) {
+  export async function open(nextMode: ActionMode) {
     if (submitting) return;
     mode = nextMode;
     form = null;
@@ -34,34 +42,34 @@
     workoutName = data.workoutTypes.some((type) => type.name === nextWorkout) ? nextWorkout : '';
     dialogVersion += 1;
     await tick();
-    if (!dialog.open) dialog.showModal();
+    if (dialog && !dialog.open) dialog.showModal();
     if (nextMode === 'workout' && personName && workoutSearch) {
-      if (selectedWorkout) valueInput.focus();
-      else workoutSearch.focus();
+      if (selectedWorkout) valueInput?.focus();
+      else workoutSearch?.focus();
     }
   }
 
-  function shortcut(event) {
+  function shortcut(event: KeyboardEvent) {
     if (!dashboard && !person && !workout) return;
     if (dialog?.open || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat || event.isComposing) return;
     if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]')) return;
     if (event.key === ' ' && event.target instanceof HTMLElement && event.target.closest('button, a')) return;
     const key = event.key.toLowerCase();
-    const nextMode = key === ' ' ? 'workout' : dashboard ? { n: 'person', l: 'type' }[key] : undefined;
+    const nextMode = key === ' ' ? 'workout' : dashboard && key === 'n' ? 'person' : dashboard && key === 'l' ? 'type' : undefined;
     if (nextMode) {
       event.preventDefault();
       open(nextMode);
     }
   }
 
-  function dismiss(event) {
+  function dismiss(event: KeyboardEvent) {
     if (event.key !== 'Escape' || event.isComposing) return;
     event.preventDefault();
     event.stopPropagation();
-    if (!event.repeat && !submitting) dialog.close();
+    if (!event.repeat && !submitting) dialog?.close();
   }
 
-  function submit({ formData, cancel }) {
+  const submit: SubmitFunction<FormResult, FormResult> = ({ formData, cancel }) => {
     if (mode === 'workout' && (!data.people.includes(personName) || !selectedWorkout)) {
       cancel();
       form = { error: 'Select a person and a workout type.' };
@@ -72,7 +80,7 @@
     return async ({ result, update }) => {
       try {
         await update();
-        if (result.type === 'failure') form = result.data;
+        if (result.type === 'failure') form = result.data ?? null;
         if (result.type === 'success') {
           if (typeof loggedWorkout === 'string') {
             rememberedWorkout = loggedWorkout;
@@ -80,13 +88,13 @@
               sessionStorage.setItem('lastWorkout', loggedWorkout);
             } catch {}
           }
-          dialog.close();
+          dialog?.close();
         }
       } finally {
         submitting = false;
       }
     };
-  }
+  };
 </script>
 
 <svelte:window onkeydown={shortcut} />
@@ -153,7 +161,7 @@
               label="Person"
               options={peopleOptions}
               bind:value={personName}
-              onselect={() => workoutSearch.focus()}
+              onselect={() => workoutSearch?.focus()}
             />
           </div>
           <div>
@@ -163,7 +171,7 @@
               label="Workout type"
               options={data.workoutTypes}
               bind:value={workoutName}
-              onselect={() => valueInput.focus()}
+              onselect={() => valueInput?.focus()}
             />
           </div>
           <p>
@@ -182,5 +190,5 @@
   {#if form?.error}
     <p role="alert">{form.error}</p>
   {/if}
-  <button class="cancel" onpointerdown={(event) => event.preventDefault()} onclick={() => dialog.close()} disabled={submitting}>Cancel</button>
+  <button class="cancel" onpointerdown={(event) => event.preventDefault()} onclick={() => dialog?.close()} disabled={submitting}>Cancel</button>
 </dialog>

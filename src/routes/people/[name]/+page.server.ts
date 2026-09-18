@@ -1,14 +1,15 @@
+import type { Actions, PageServerLoad } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { resolve } from 'node:path';
-import { createStore, InputError } from '$lib/server/store.js';
+import { createStore, InputError } from '$lib/server/store';
 
 const store = createStore(resolve('data'));
 
-export function load({ params }) {
+export const load = (({ params }) => {
   const person = store.personPage(params.name);
   if (!person) error(404, 'Person not found.');
   return person;
-}
+}) satisfies PageServerLoad;
 
 export const actions = {
   uploadPicture: async ({ params, request }) => {
@@ -21,4 +22,4 @@ export const actions = {
       throw error;
     }
   }
-};
+} satisfies Actions;

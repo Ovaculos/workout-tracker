@@ -1,7 +1,13 @@
-<script>
+<script lang="ts">
   import DeleteButton from '$lib/DeleteButton.svelte';
 
-  let { person, entry, description = '' } = $props();
+  import type { WorkoutEntry } from '$lib/types';
+
+  let { person, entry, description = '' }: {
+    person: string;
+    entry: WorkoutEntry;
+    description?: string;
+  } = $props();
 </script>
 
 <DeleteButton

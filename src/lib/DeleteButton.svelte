@@ -1,8 +1,16 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   import { onMount } from 'svelte';
 
-  let { action, fields, message, label = 'Delete' } = $props();
+  import type { SubmitFunction } from '@sveltejs/kit';
+  import type { FormResult } from '$lib/types';
+
+  let { action, fields, message, label = 'Delete' }: {
+    action: string;
+    fields: Record<string, string>;
+    message: string;
+    label?: string;
+  } = $props();
   let deleting = $state(false);
   let error = $state('');
   let ready = $state(false);
@@ -11,7 +19,7 @@
     ready = true;
   });
 
-  function submit({ cancel }) {
+  const submit: SubmitFunction<FormResult, FormResult> = ({ cancel }) => {
     if (deleting || !window.confirm(message)) {
       cancel();
       return;
@@ -20,13 +28,13 @@
     error = '';
     return async ({ result, update }) => {
       try {
-        if (result.type === 'failure') error = result.data.error;
+        if (result.type === 'failure') error = result.data?.error ?? '';
         await update();
       } finally {
         deleting = false;
       }
     };
-  }
+  };
 </script>
 
 <form method="POST" {action} use:enhance={submit}>

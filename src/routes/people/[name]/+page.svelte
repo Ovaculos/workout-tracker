@@ -1,15 +1,18 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   import DeleteButton from '$lib/DeleteButton.svelte';
   import DeleteWorkout from '$lib/DeleteWorkout.svelte';
-  import { displayName, nameColor } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names';
 
-  let { data, form } = $props();
-  let fileInput = $state();
+  import type { PageProps } from './$types';
+  import type { SubmitFunction } from '@sveltejs/kit';
+
+  let { data, form }: PageProps = $props();
+  let fileInput = $state<HTMLInputElement>();
   let uploading = $state(false);
   let rows = $derived(Array.from({ length: Math.max(data.prs.length, data.workouts.length, 1) }));
 
-  function upload() {
+  const upload: SubmitFunction = () => {
     uploading = true;
     return async ({ update }) => {
       try {
@@ -18,7 +21,7 @@
         uploading = false;
       }
     };
-  }
+  };
 </script>
 
 <svelte:head>
@@ -44,12 +47,12 @@
       accept=".png,.jpeg,.jpg,.webp"
       hidden
       onchange={(event) => {
-        if (event.currentTarget.files.length) event.currentTarget.form.requestSubmit();
+        if (event.currentTarget.files?.length) event.currentTarget.form?.requestSubmit();
       }}
     />
     <button
       type="button"
-      onclick={() => fileInput.click()}
+      onclick={() => fileInput?.click()}
       disabled={uploading}
       aria-label={data.pictureVersion === null ? 'Upload profile picture' : 'Replace profile picture'}
       style="width: 128px; height: 128px; padding: 0"

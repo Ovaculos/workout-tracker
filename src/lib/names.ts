@@ -1,12 +1,12 @@
-export function displayName(name) {
+export function displayName(name: string) {
   const characters = Array.from(name);
   return characters.length > 20 ? `${characters.slice(0, 20).join('')}-` : name;
 }
 
-export function nameColor(name) {
+export function nameColor(name: string) {
   let hash = 1779033703 ^ name.length;
   for (const character of name) {
-    hash = Math.imul(hash ^ character.codePointAt(0), 3432918353);
+    hash = Math.imul(hash ^ character.codePointAt(0)!, 3432918353);
     hash = (hash << 13) | (hash >>> 19);
   }
   while (true) {

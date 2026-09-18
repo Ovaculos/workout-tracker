@@ -2,18 +2,20 @@ import { appendFileSync, mkdirSync, readFileSync, readdirSync, renameSync, statS
 import { extname, join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 
-const imageTypes = { png: 'image/png', jpeg: 'image/jpeg', jpg: 'image/jpeg', webp: 'image/webp' };
+import type { PersonWorkout, WorkoutEntry, WorkoutOptions, WorkoutType } from '$lib/types';
+
+const imageTypes: Record<string, string> = { png: 'image/png', jpeg: 'image/jpeg', jpg: 'image/jpeg', webp: 'image/webp' };
 
 export class InputError extends Error {}
 
-function required(value, label) {
+function required(value: unknown, label: string) {
   if (typeof value !== 'string' || !value.trim()) {
     throw new InputError(`${label} is required.`);
   }
   return value.trim();
 }
 
-function personName(value) {
+function personName(value: unknown) {
   const name = required(value, 'Name').normalize('NFC');
   if (name === '.' || name === '..' || /[<>:"/\\|?*\x00-\x1f\x7f]/.test(name) || name.endsWith('.') || Buffer.byteLength(name) > 240) {
     throw new InputError('Use a name that is valid as a filename.');
@@ -21,14 +23,14 @@ function personName(value) {
   return name;
 }
 
-export function createStore(directory) {
+export function createStore(directory: string) {
   const peopleDirectory = join(directory, 'people');
   const typesFile = join(directory, 'workoutTypes.json');
   mkdirSync(peopleDirectory, { recursive: true });
   try {
     writeFileSync(typesFile, '[]\n', { flag: 'wx' });
   } catch (error) {
-    if (error.code !== 'EEXIST') throw error;
+    if (!(error instanceof Error) || !('code' in error) || error.code !== 'EEXIST') throw error;
   }
 
   function people() {
@@ -38,17 +40,17 @@ export function createStore(directory) {
       .sort((a, b) => a.localeCompare(b));
   }
 
-  function workoutTypes() {
+  function workoutTypes(): WorkoutType[] {
     return JSON.parse(readFileSync(typesFile, 'utf8'));
   }
 
-  function pictureFile(name) {
+  function pictureFile(name: string) {
     if (!people().includes(name)) return null;
     const files = readdirSync(peopleDirectory, { withFileTypes: true });
     return files.find((file) => file.isFile() && Object.keys(imageTypes).some((extension) => file.name === `${name}.${extension}`))?.name ?? null;
   }
 
-  function picture(name) {
+  function picture(name: string) {
     const filename = pictureFile(name);
     if (!filename) return null;
     return {
@@ -57,12 +59,12 @@ export function createStore(directory) {
     };
   }
 
-  function pictureVersion(name) {
+  function pictureVersion(name: string) {
     const filename = pictureFile(name);
     return filename ? statSync(join(peopleDirectory, filename)).mtimeMs : null;
   }
 
-  async function savePicture(name, file) {
+  async function savePicture(name: string, file: unknown) {
     if (!people().includes(name)) throw new InputError('Person not found.');
     if (!(file instanceof File) || !file.size) throw new InputError('Choose a picture.');
     const extension = extname(file.name).slice(1).toLowerCase();
@@ -82,7 +84,7 @@ export function createStore(directory) {
     if (previous && previous !== filename) unlinkSync(join(peopleDirectory, previous));
   }
 
-  function addPerson(value) {
+  function addPerson(value: unknown) {
     const name = personName(value);
     if (people().some((person) => person.toLowerCase() === name.toLowerCase())) {
       throw new InputError('A person with that name already exists.');
@@ -90,14 +92,17 @@ export function createStore(directory) {
     writeFileSync(join(peopleDirectory, `${name}.jsonl`), '', { flag: 'wx' });
   }
 
-  function addWorkoutType(input) {
+  function addWorkoutType(input: Record<string, unknown>) {
     const name = required(input.name, 'Workout name');
     const description = required(input.description, 'Field description');
     const type = input.type;
-    if (!['number', 'string'].includes(type)) throw new InputError('Choose number or string.');
-    const ranking = type === 'number' ? input.ranking : 'none';
-    if (type === 'number' && !['higher', 'lower'].includes(ranking)) {
-      throw new InputError('Choose whether higher or lower values are better.');
+    if (type !== 'number' && type !== 'string') throw new InputError('Choose number or string.');
+    let ranking: WorkoutType['ranking'] = 'none';
+    if (type === 'number') {
+      if (input.ranking !== 'higher' && input.ranking !== 'lower') {
+        throw new InputError('Choose whether higher or lower values are better.');
+      }
+      ranking = input.ranking;
     }
     const types = workoutTypes();
     if (types.some((workout) => workout.name.toLowerCase() === name.toLowerCase())) {
@@ -108,7 +113,7 @@ export function createStore(directory) {
     renameSync(`${typesFile}.tmp`, typesFile);
   }
 
-  function logWorkout(input) {
+  function logWorkout(input: Record<string, unknown>) {
     const person = personName(input.person);
     if (!people().includes(person)) throw new InputError('Choose an existing person.');
     const workout = workoutTypes().find((type) => type.name === input.workoutName);
@@ -122,24 +127,24 @@ export function createStore(directory) {
     appendFileSync(join(peopleDirectory, `${person}.jsonl`), `${JSON.stringify(entry)}\n`);
   }
 
-  function workouts(person) {
+  function workouts(person: string): WorkoutEntry[] {
     return readFileSync(join(peopleDirectory, `${person}.jsonl`), 'utf8')
       .split('\n')
       .filter(Boolean)
       .map((line, index) => {
-        const entry = JSON.parse(line);
+        const entry: Omit<WorkoutEntry, 'id'> & { id?: string } = JSON.parse(line);
         return { ...entry, id: entry.id ?? createHash('sha256').update(`${index}:${line}`).digest('hex') };
       });
   }
 
-  function writeWorkouts(person, entries) {
+  function writeWorkouts(person: string, entries: WorkoutEntry[]) {
     const path = join(peopleDirectory, `${person}.jsonl`);
     const text = entries.map((entry) => JSON.stringify(entry)).join('\n');
     writeFileSync(`${path}.tmp`, text ? `${text}\n` : '');
     renameSync(`${path}.tmp`, path);
   }
 
-  function deletePerson(value) {
+  function deletePerson(value: unknown) {
     const name = personName(value);
     if (!people().includes(name)) throw new InputError('Person not found.');
     const filename = pictureFile(name);
@@ -147,7 +152,7 @@ export function createStore(directory) {
     unlinkSync(join(peopleDirectory, `${name}.jsonl`));
   }
 
-  function deleteWorkoutType(value) {
+  function deleteWorkoutType(value: unknown) {
     const name = required(value, 'Workout name');
     const types = workoutTypes();
     if (!types.some((type) => type.name === name)) throw new InputError('Workout type not found.');
@@ -160,7 +165,7 @@ export function createStore(directory) {
     renameSync(`${typesFile}.tmp`, typesFile);
   }
 
-  function deleteWorkout(input) {
+  function deleteWorkout(input: Record<string, unknown>) {
     const person = personName(input.person);
     if (!people().includes(person)) throw new InputError('Person not found.');
     const id = required(input.entryId, 'Workout entry');
@@ -171,16 +176,16 @@ export function createStore(directory) {
     writeWorkouts(person, entries);
   }
 
-  function records(entries, types) {
-    const best = new Map();
-    const prs = [];
+  function records<T extends WorkoutEntry>(entries: T[], types: WorkoutType[]) {
+    const best = new Map<string, number>();
+    const prs: (T & { value: number })[] = [];
     for (const entry of entries) {
       const type = types.find((type) => type.name === entry.workoutName);
-      if (!type || type.type !== 'number') continue;
+      if (!type || type.type !== 'number' || typeof entry.value !== 'number') continue;
       const previous = best.get(entry.workoutName);
       if (previous === undefined || (type.ranking === 'lower' ? entry.value < previous : entry.value > previous)) {
         best.set(entry.workoutName, entry.value);
-        prs.push(entry);
+        prs.push({ ...entry, value: entry.value });
       }
     }
     return prs;
@@ -194,7 +199,7 @@ export function createStore(directory) {
     return { prs: prs.slice(0, 10) };
   }
 
-  function options() {
+  function options(): WorkoutOptions {
     const names = people();
     return {
       people: names,
@@ -203,11 +208,11 @@ export function createStore(directory) {
     };
   }
 
-  function personPage(name) {
+  function personPage(name: string) {
     if (!people().includes(name)) return null;
     const entries = workouts(name);
     const types = workoutTypes();
-    const best = new Map();
+    const best = new Map<string, WorkoutEntry & { value: number }>();
     for (const entry of records(entries, types)) {
       best.set(entry.workoutName, entry);
     }
@@ -220,11 +225,11 @@ export function createStore(directory) {
     };
   }
 
-  function workoutPage(name) {
+  function workoutPage(name: string) {
     const workout = workoutTypes().find((type) => type.name === name);
     if (!workout) return null;
-    const prs = [];
-    const recent = [];
+    const prs: (PersonWorkout & { value: number })[] = [];
+    const recent: PersonWorkout[] = [];
     for (const person of people()) {
       const version = pictureVersion(person);
       const entries = workouts(person)

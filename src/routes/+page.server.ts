@@ -1,15 +1,14 @@
 import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad, RequestEvent } from './$types';
 import { resolve } from 'node:path';
-import { createStore, InputError } from '$lib/server/store.js';
+import { createStore, InputError } from '$lib/server/store';
 
 const store = createStore(resolve('data'));
 
-export function load() {
-  return store.dashboard();
-}
+export const load = (() => store.dashboard()) satisfies PageServerLoad;
 
-function action(save) {
-  return async ({ request }) => {
+function action(save: (input: Record<string, FormDataEntryValue>) => void) {
+  return async ({ request }: RequestEvent) => {
     const input = Object.fromEntries(await request.formData());
     try {
       save(input);
@@ -34,4 +33,4 @@ export const actions = {
     store.deleteWorkoutType(input.workoutName);
     redirect(303, '/');
   })
-};
+} satisfies Actions;

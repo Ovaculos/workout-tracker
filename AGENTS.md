@@ -9,6 +9,7 @@
 # Stack and dependencies
 
 - Use SvelteKit with Bun for package management and commands.
+- Use TypeScript for application code and configuration, and `lang="ts"` for Svelte scripts. Keep strict type checking enabled.
 - Do not add a Node adapter or production deployment setup unless requested.
 - Avoid adding libraries. Before installing a library, ask the user and explain why it is needed.
 
