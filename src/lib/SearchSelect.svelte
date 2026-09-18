@@ -1,6 +1,6 @@
 <script>
   import { tick } from 'svelte';
-  import { displayName } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names.js';
 
   let { name, label, options, value = $bindable(''), onselect } = $props();
   let input = $state();
@@ -55,6 +55,7 @@
       bind:this={input}
       id={`${name}-search`}
       value={value || query}
+      style:color={value ? nameColor(value) : undefined}
       role="combobox"
       aria-autocomplete="list"
       aria-expanded={expanded}
@@ -86,9 +87,9 @@
           onclick={() => choose(option)}
         >
           {#if option.picture}
-            <img src={option.picture} alt="" width="64" height="64" style="object-fit: cover; vertical-align: middle" />
+            <img src={option.picture} alt="" width="48" height="48" style="object-fit: cover; vertical-align: middle" />
           {/if}
-          {displayName(option.name)}
+          <span style:color={nameColor(option.name)}>{displayName(option.name)}</span>
         </button>
       {:else}
         <p role="status">No matches.</p>
@@ -100,29 +101,35 @@
 <style>
   .search {
     position: relative;
-    display: inline-block;
+    display: block;
   }
 
   [role='listbox'] {
     position: absolute;
     top: 100%;
     left: 0;
-    z-index: 1;
+    z-index: 2;
     min-width: 100%;
     max-height: 16rem;
     overflow-y: auto;
-    background: Canvas;
-    color: CanvasText;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--line);
   }
 
   [role='option'] {
     display: block;
     width: 100%;
     text-align: left;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
   }
 
   [aria-selected='true'] {
-    background: Highlight;
-    color: HighlightText;
+    background: #303030;
+    color: var(--text);
   }
 </style>

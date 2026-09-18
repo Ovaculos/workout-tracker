@@ -21,7 +21,7 @@
     picture: data.pictureVersions[name] === null ? null : `/people/${encodeURIComponent(name)}/picture?v=${data.pictureVersions[name]}`
   })));
 
-  async function open(nextMode) {
+  export async function open(nextMode) {
     if (submitting) return;
     mode = nextMode;
     form = null;
@@ -30,7 +30,7 @@
     try {
       rememberedWorkout = sessionStorage.getItem('lastWorkout') ?? rememberedWorkout;
     } catch {}
-    const nextWorkout = workout || rememberedWorkout;
+    const nextWorkout = workout || (dashboard ? rememberedWorkout : '');
     workoutName = data.workoutTypes.some((type) => type.name === nextWorkout) ? nextWorkout : '';
     dialogVersion += 1;
     await tick();
@@ -52,6 +52,13 @@
       event.preventDefault();
       open(nextMode);
     }
+  }
+
+  function dismiss(event) {
+    if (event.key !== 'Escape' || event.isComposing) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (!event.repeat && !submitting) dialog.close();
   }
 
   function submit({ formData, cancel }) {
@@ -84,13 +91,22 @@
 
 <svelte:window onkeydown={shortcut} />
 
-{#if dashboard}
-  <button onclick={() => open('person')}>Add person</button>
-  <button onclick={() => open('type')}>Add workout type</button>
-  <button onclick={() => open('workout')}>Log workout</button>
-{/if}
+<footer class="bottom-actions">
+  {#if dashboard}
+    <button class="shortcut-button" aria-label="Add workout type" aria-keyshortcuts="L" onclick={() => open('type')}>
+      <kbd>L</kbd><span>Add workout type</span>
+    </button>
+  {:else}
+    <a class="shortcut-button" href="/" aria-label="Dashboard" aria-keyshortcuts="Escape">
+      <kbd>Esc</kbd><span>Dashboard</span>
+    </a>
+  {/if}
+  <button class="shortcut-button" aria-label="Log workout" aria-keyshortcuts="Space" onclick={() => open('workout')}>
+    <kbd>Space</kbd><span>Log workout</span>
+  </button>
+</footer>
 
-<dialog bind:this={dialog} aria-labelledby="dialog-title" style="overflow: visible">
+<dialog bind:this={dialog} aria-labelledby="dialog-title" onkeydowncapture={dismiss} style="overflow: visible">
   {#key dialogVersion}
     {#if mode === 'person'}
       <h2 id="dialog-title">Add person</h2>
@@ -166,5 +182,5 @@
   {#if form?.error}
     <p role="alert">{form.error}</p>
   {/if}
-  <button onpointerdown={(event) => event.preventDefault()} onclick={() => dialog.close()} disabled={submitting}>Cancel</button>
+  <button class="cancel" onpointerdown={(event) => event.preventDefault()} onclick={() => dialog.close()} disabled={submitting}>Cancel</button>
 </dialog>

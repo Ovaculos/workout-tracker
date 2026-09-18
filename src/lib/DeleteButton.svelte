@@ -49,10 +49,18 @@
   }
 
   button {
-    padding: 0;
+    padding: 0.35rem;
     border: 0;
     background: none;
+    color: var(--muted);
+    box-shadow: none;
     vertical-align: middle;
     cursor: pointer;
+  }
+
+  button:hover:not(:disabled) {
+    color: var(--text);
+    background: none;
+    box-shadow: none;
   }
 </style>

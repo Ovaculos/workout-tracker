@@ -1,7 +1,7 @@
 <script>
   import DeleteButton from '$lib/DeleteButton.svelte';
   import DeleteWorkout from '$lib/DeleteWorkout.svelte';
-  import { displayName } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names.js';
 
   let { data } = $props();
   let rows = $derived(Array.from({ length: Math.max(data.prs.length, data.recent.length, 1) }));
@@ -17,20 +17,20 @@
       <img
         src={`/people/${encodeURIComponent(result.person)}/picture?v=${result.pictureVersion}`}
         alt=""
-        width="64"
-        height="64"
+        width="48"
+        height="48"
         style="object-fit: cover; vertical-align: middle"
       />
     {/if}
-    {displayName(result.person)}
-  </a>: {result.value} {data.workout.description}
+    <span style:color={nameColor(result.person)}>{displayName(result.person)}</span>
+  </a>: <span class:workout-value={typeof result.value === 'number'}>{result.value}</span> {data.workout.description}
   <DeleteWorkout person={result.person} entry={result} description={data.workout.description} />
 {/snippet}
 
 <main>
   <a href="/">Dashboard</a>
-  <div>
-    <h1 title={data.workout.name} style="display: inline">{displayName(data.workout.name)}</h1>
+  <div class="page-heading">
+    <h1 title={data.workout.name} style:color={nameColor(data.workout.name)}>{displayName(data.workout.name)}</h1>
     <DeleteButton
       action="/?/deleteWorkoutType"
       fields={{ workoutName: data.workout.name }}
@@ -42,7 +42,7 @@
     <thead>
       <tr>
         <th scope="col">PRs</th>
-        <th scope="col">25 most recent workouts</th>
+        <th scope="col">Recent Logs</th>
       </tr>
     </thead>
     <tbody>

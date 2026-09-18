@@ -191,7 +191,7 @@ export function createStore(directory) {
     const types = workoutTypes();
     const prs = names.flatMap((person) => records(workouts(person), types).map((entry) => ({ person, ...entry })));
     prs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return { prs: prs.slice(0, 5) };
+    return { prs: prs.slice(0, 10) };
   }
 
   function options() {

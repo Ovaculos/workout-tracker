@@ -2,7 +2,7 @@
   import { enhance } from '$app/forms';
   import DeleteButton from '$lib/DeleteButton.svelte';
   import DeleteWorkout from '$lib/DeleteWorkout.svelte';
-  import { displayName } from '$lib/names.js';
+  import { displayName, nameColor } from '$lib/names.js';
 
   let { data, form } = $props();
   let fileInput = $state();
@@ -27,8 +27,8 @@
 
 <main>
   <a href="/">Dashboard</a>
-  <div>
-    <h1 title={data.name} style="display: inline">{displayName(data.name)}</h1>
+  <div class="page-heading">
+    <h1 title={data.name} style:color={nameColor(data.name)}>{displayName(data.name)}</h1>
     <DeleteButton
       action="/?/deletePerson"
       fields={{ person: data.name }}
@@ -72,7 +72,7 @@
     <thead>
       <tr>
         <th scope="col">PRs</th>
-        <th scope="col">25 most recent workouts</th>
+        <th scope="col">Recent Workouts</th>
       </tr>
     </thead>
     <tbody>
@@ -80,7 +80,7 @@
         <tr>
           <td>
             {#if data.prs[index]}
-              <a href={`/workouts/${encodeURIComponent(data.prs[index].workoutName)}`} title={data.prs[index].workoutName}>{displayName(data.prs[index].workoutName)}</a>: {data.prs[index].value}
+              <a href={`/workouts/${encodeURIComponent(data.prs[index].workoutName)}`} title={data.prs[index].workoutName} style:color={nameColor(data.prs[index].workoutName)}>{displayName(data.prs[index].workoutName)}</a>: <span class:workout-value={typeof data.prs[index].value === 'number'}>{data.prs[index].value}</span>
               {data.workoutTypes.find((workout) => workout.name === data.prs[index].workoutName)?.description ?? ''}
               <DeleteWorkout
                 person={data.name}
@@ -93,7 +93,7 @@
           </td>
           <td>
             {#if data.workouts[index]}
-              <a href={`/workouts/${encodeURIComponent(data.workouts[index].workoutName)}`} title={data.workouts[index].workoutName}>{displayName(data.workouts[index].workoutName)}</a>: {data.workouts[index].value}
+              <a href={`/workouts/${encodeURIComponent(data.workouts[index].workoutName)}`} title={data.workouts[index].workoutName} style:color={nameColor(data.workouts[index].workoutName)}>{displayName(data.workouts[index].workoutName)}</a>: <span class:workout-value={typeof data.workouts[index].value === 'number'}>{data.workouts[index].value}</span>
               {data.workoutTypes.find((workout) => workout.name === data.workouts[index].workoutName)?.description ?? ''}
               <DeleteWorkout
                 person={data.name}

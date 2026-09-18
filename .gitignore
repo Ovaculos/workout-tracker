@@ -3,6 +3,5 @@ node_modules/
 build/
 .env
 .env.*
-data/people/
-data/*.tmp
+/data/
 .DS_Store
